@@ -8,6 +8,10 @@
     "dist/*",
     "src/examples/*"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linkeo/shape-validate.git"
+  },
   "scripts": {
     "prebuild": "rimraf ./dist",
     "build": "tsc --build tsconfig.build.json",
