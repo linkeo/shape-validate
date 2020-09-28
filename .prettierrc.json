@@ -1,0 +1,14 @@
+{
+  "overrides": [
+    {
+      "files": "*.ts",
+      "excludeFiles": [
+        "node_modules/**"
+      ],
+      "options": {
+        "printWidth": 120,
+        "singleQuote": true
+      }
+    }
+  ]
+}

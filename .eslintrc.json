@@ -1,0 +1,28 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint", "prettier", "import"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "prettier",
+    "prettier/@typescript-eslint",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/typescript"
+  ],
+  "rules": {
+    "prettier/prettier": "warn",
+    "import/no-unresolved": "error",
+    "import/no-self-import": "error",
+    "import/no-cycle": "error",
+    "import/export": "warn",
+    "import/no-deprecated": "warn",
+    "import/no-extraneous-dependencies": "warn",
+    "import/order": "warn",
+    "import/first": "warn",
+    "import/no-duplicates": "warn",
+    "import/newline-after-import": "warn",
+    "object-shorthand": "warn"
+  }
+}
