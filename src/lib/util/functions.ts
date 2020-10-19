@@ -97,19 +97,29 @@ export function checkAsyncSchema(schema: Schema): boolean {
 export function simplifyThreePhaseSchema(threePhraseSchema: ThreePhraseSchema): Schema {
   const {
     allOf: [before, main, after],
-    ...rest
+    stripNull,
+    default: defaultValue,
   } = threePhraseSchema;
 
-  const hasBefore = before.allOf && before.allOf.length > 0;
-  const hasAfter = after.allOf && after.allOf.length > 0;
-  if (hasBefore && hasAfter) {
-    return threePhraseSchema;
-  } else if (hasBefore) {
-    return { ...rest, allOf: [before, main] };
-  } else if (hasAfter) {
-    return { ...rest, allOf: [main, after] };
+  const allOf: Schema[] = [];
+
+  if (stripNull) {
+    allOf.push({ stripNull: true });
   }
-  return { ...rest, ...main };
+  if (before.allOf && before.allOf.length > 0) {
+    allOf.push(before);
+  }
+  allOf.push(main);
+  if (after.allOf && after.allOf.length > 0) {
+    allOf.push(after);
+  }
+  if (defaultValue !== undefined) {
+    return { allOf, default: defaultValue };
+  }
+  if (allOf.length > 1) {
+    return { allOf };
+  }
+  return main;
 }
 
 export function overwriteChildrenErrorMessage(schema: Schema, message: string): void {

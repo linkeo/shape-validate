@@ -15,7 +15,7 @@ export class BaseShapeImpl<T, K extends keyof ShapeHKT<T> = 'base'> implements B
   options?: ShapeHKT<T>[K]['options'];
 
   constructor(schema: Schema, options?: ShapeOptions) {
-    this.schema = { allOf: [{}, produce(schema, noop), {}] };
+    this.schema = { allOf: [{}, produce(schema, noop), {}], stripNull: true };
     this.options = produce(options, noop);
   }
 
@@ -38,15 +38,8 @@ export class BaseShapeImpl<T, K extends keyof ShapeHKT<T> = 'base'> implements B
 
   nullable<ST extends BaseShapeImpl<T, K>>(this: ST, nullable = true): ShapeHKT<T | null>[K] {
     return this.produce_((draft) => {
-      if (nullable) {
-        draft.allOf[1].nullable = true;
-        draft.default = draft.default ?? null;
-      } else {
-        draft.allOf[1].nullable = false;
-        if (draft.default === null) {
-          delete draft.default;
-        }
-      }
+      draft.allOf[1].nullable = nullable;
+      draft.stripNull = !nullable;
     }, undefined);
   }
 

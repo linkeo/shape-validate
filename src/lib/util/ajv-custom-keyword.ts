@@ -2,6 +2,21 @@ import { Ajv, ValidationError, ErrorObject } from 'ajv';
 
 export default function CustomKeywords(ajv: Ajv): void {
   ajv.addKeyword('errorMessage', { valid: true });
+  ajv.addKeyword('stripNull', {
+    async: false,
+    modifying: true,
+    metaSchema: { type: 'boolean' },
+    statements: true,
+    inline: (it, _keyword, schema) => {
+      const result = `valid${it.level}`;
+      if (!schema || it.dataLevel === 0) {
+        return `var ${result} = true;`;
+      }
+      const value = `data${it.dataLevel}`;
+      const valueInParent = `data${it.dataLevel - 1 || ''}[${it.dataPathArr[it.dataLevel]}]`;
+      return `if (${value} === null) { ${value} = ${valueInParent} = undefined; } var ${result} = true;`;
+    },
+  });
   ajv.addKeyword('customSync', {
     async: false,
     modifying: true,
@@ -17,7 +32,7 @@ export default function CustomKeywords(ajv: Ajv): void {
       } = (data, dataPath, parentData, propertyName) => {
         try {
           const value = schema(data);
-          if (value !== undefined && parentData != null && propertyName != null) {
+          if (parentData != null && propertyName != null) {
             parentData[propertyName] = value;
           }
           return true;
@@ -54,7 +69,7 @@ export default function CustomKeywords(ajv: Ajv): void {
       } = async (data, dataPath, parentData, propertyName) => {
         try {
           const value = await schema(data);
-          if (value !== undefined && parentData != null && propertyName != null) {
+          if (parentData != null && propertyName != null) {
             parentData[propertyName] = value;
           }
           return true;

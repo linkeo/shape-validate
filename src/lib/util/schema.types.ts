@@ -25,6 +25,7 @@ interface CustomExtendKeywords {
   customSync?: SyncValidationFunction<any>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   customAsync?: AsyncValidationFunction<any>;
+  stripNull?: boolean;
 }
 
 interface CompondSchemaKeywords {
@@ -96,6 +97,7 @@ export interface Schema extends BaseSchema, Omit<Record<string, unknown>, BaseSc
 export type ThreePhraseSchema<T extends Schema = Schema> = {
   allOf: [Schema, T, Schema];
   default?: Schema['default'];
+  stripNull?: Schema['stripNull'];
 };
 
 export interface ObjectSchema extends Schema {

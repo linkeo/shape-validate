@@ -11,7 +11,7 @@ const compiler = new Ajv({
   transpile: false as never,
   coerceTypes: true,
   removeAdditional: 'failing',
-  useDefaults: true,
+  useDefaults: 'empty',
   strictNumbers: true,
   nullable: true,
   verbose: true,
