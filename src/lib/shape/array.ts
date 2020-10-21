@@ -1,6 +1,5 @@
 import { ArrayShape, Shape, ShapeValue, ShapeOptions, TupleShape } from '../util/shape.types';
 import { ArraySchema } from '../util/schema.types';
-import { simplifyThreePhaseSchema } from '../util/functions';
 import { BaseShapeImpl } from './base';
 
 type TupleShapeValue<ST> = {
@@ -13,15 +12,21 @@ class ArrayShapeImpl<T> extends BaseShapeImpl<T, 'array'> implements ArrayShape<
   }
 
   minSize(size: number): ArrayShape<T> {
-    return this.extend({ minItems: size });
+    return this.produce_((draft) => {
+      draft.minItems = size;
+    }, undefined);
   }
 
   maxSize(size: number): ArrayShape<T> {
-    return this.extend({ maxItems: size });
+    return this.produce_((draft) => {
+      draft.maxItems = size;
+    }, undefined);
   }
 
   unique(unique = true): ArrayShape<T> {
-    return this.extend({ uniqueItems: unique });
+    return this.produce_((draft) => {
+      draft.uniqueItems = unique;
+    }, undefined);
   }
 }
 
@@ -35,8 +40,8 @@ class TupleShapeImpl<T> extends BaseShapeImpl<T, 'tuple'> implements TupleShape<
  * 创建一个「形状」用于描述数组，数组的元素可以是另一个「形状」的值
  * @param itemShape 描述数组元素的「形状」
  */
-export function array<T>(itemShape: Shape<T>): ArrayShape<T[]> {
-  return new ArrayShapeImpl({ type: 'array', items: simplifyThreePhaseSchema(itemShape.schema) });
+export function array<T extends Shape>(itemShape: T): ArrayShape<ShapeValue<T>> {
+  return new ArrayShapeImpl({ type: 'array', items: itemShape.schema });
 }
 
 /**
@@ -46,9 +51,9 @@ export function array<T>(itemShape: Shape<T>): ArrayShape<T[]> {
 export function tuple<T extends Shape[]>(...itemShapes: T): TupleShape<TupleShapeValue<T>> {
   return new TupleShapeImpl({
     type: 'array',
-    items: itemShapes.map((item) => simplifyThreePhaseSchema(item.schema)),
-    minLength: itemShapes.length,
-    maxLength: itemShapes.length,
+    items: itemShapes.map((item) => item.schema),
+    minItems: itemShapes.length,
+    maxItems: itemShapes.length,
     additionalItems: false,
   });
 }

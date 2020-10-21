@@ -18,7 +18,6 @@
       - [自定义](#自定义)
       - [自定义错误信息](#自定义错误信息)
       - [错误信息国际化](#错误信息国际化)
-  - [关于内部 Ajv 实例](#关于内部-ajv-实例)
 
 ## 主要特性
 
@@ -63,10 +62,9 @@ await shape.validateAsync({ name: "Tom", age: "18" });
 import { any, boolean, date } from "shape-validate";
 
 any(); // 这个形状初始没有任何约束条件
-any().optional(); // 字段是否可以为undefined（或者字段不在对象中出现）
-any().optional(false);
-any().nullable(); // 字段是否可以为null（将自动设置默认值为null）
-any().nullable(false);
+any().optional(); // 字段可以为undefined或者字段不在对象中出现
+any().nullable(); // 字段可以为null（如果本来由type限制了不为null）
+any().default("a"); // 当字段为undefined或null或空字符串时，会被修改为默认值
 ```
 
 #### 字符串「形状」
@@ -204,23 +202,3 @@ setLocale("zh-CN");
 
 - `en`（英文，默认就是英文）
 - `zh-CN`（中文）
-
-## 关于内部 Ajv 实例
-
-```ts
-const compiler = new Ajv({
-  transpile: false as never, // 不使用nodent编译异步函数
-  coerceTypes: true, // 开启基本类型之间的转换
-  removeAdditional: "failing", // 将对象和数组中不满足Schema的数据去除
-  useDefaults: true, // 当值为undefined或者空字符串是，会替换为默认值
-  strictNumbers: true, // 不接受 NaN 和 Infinity
-  nullable: true, // 兼容 OpenAPI 的 nullable 关键字
-  verbose: true, // 生成完整的错误对象
-  messages: false, // 不生成默认的错误信息
-});
-
-// 使用 ajv-keywords 添加了 transform, regexp 两个关键字
-ajvKeywords(compiler, ["transform", "regexp"]);
-
-// 另外为了支持自定义函数以及错误信息，添加了 customSync, customAsync, errorMessage 关键字
-```

@@ -8,23 +8,33 @@ class StringShapeImpl<T> extends BaseShapeImpl<T, 'string'> implements StringSha
   }
 
   minLength(length: number): StringShape<T> {
-    return this.extend({ minLength: length });
+    return this.produce_((draft) => {
+      draft.minLength = length;
+    }, undefined);
   }
 
   maxLength(length: number): StringShape<T> {
-    return this.extend({ maxLength: length });
+    return this.produce_((draft) => {
+      draft.maxLength = length;
+    }, undefined);
   }
 
   pattern(pattern: RegExp): StringShape<T> {
     const { source, flags } = pattern;
     if (!flags) {
-      return this.extend({ pattern: source });
+      return this.produce_((draft) => {
+        draft.pattern = source;
+      }, undefined);
     }
-    return this.extend({ regexp: { pattern: source, flags } });
+    return this.produce_((draft) => {
+      draft.regexp = { pattern: source, flags };
+    }, undefined);
   }
 
   format(format: StringSchemaBuiltinFormat): StringShape<T> {
-    return this.extend({ format });
+    return this.produce_((draft) => {
+      draft.format = format;
+    }, undefined);
   }
 
   trim(): StringShape<T> {

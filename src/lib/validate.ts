@@ -4,12 +4,12 @@ import cloneDeep from 'clone-deep';
 import { Shape } from './util/shape.types';
 import { Schema } from './util/schema.types';
 import { ValidationError } from './errors';
-import { noop, checkAsyncSchema, simplifyThreePhaseSchema } from './util/functions';
-import CustomKeywords from './util/ajv-custom-keyword';
+import { noop, checkAsyncSchema, transformIntoValidationSchema } from './util/functions';
+import AjvCustom from './util/ajv-custom';
 
 const compiler = new Ajv({
   transpile: false as never,
-  coerceTypes: true,
+  coerceTypes: false,
   removeAdditional: 'failing',
   useDefaults: 'empty',
   strictNumbers: true,
@@ -18,13 +18,13 @@ const compiler = new Ajv({
   messages: false,
 });
 
-AjvKeywords(compiler, ['transform', 'regexp']);
-CustomKeywords(compiler);
+AjvKeywords(compiler, ['transform', 'regexp', 'instanceof']);
+AjvCustom(compiler);
 
 const cached = new WeakMap<Shape, Ajv.ValidateFunction>();
 
 function wrap(shape: Shape): Schema {
-  const schema = simplifyThreePhaseSchema(shape.schema);
+  const schema = transformIntoValidationSchema(shape.schema);
   return {
     $async: checkAsyncSchema(schema),
     type: 'object',

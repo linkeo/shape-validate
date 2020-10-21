@@ -18,7 +18,6 @@ A library to validate data, based on ajv, inspired by joi and superstruct.
       - [Custom Shape and Logic](#custom-shape-and-logic)
       - [Customize Error Messages](#customize-error-messages)
       - [i18n](#i18n)
-  - [Underlying Ajv Instance](#underlying-ajv-instance)
 
 ## Features
 
@@ -64,9 +63,8 @@ import { any, boolean, date } from "shape-validate";
 
 any(); // A shape with no limit
 any().optional(); // Indicate value can be omitted in object
-any().optional(false); // Inverse operation
-any().nullable(); // Indicate value can be null
-any().nullable(false); // Inverse operation
+any().nullable(); // Indicate value can be null (if limited by type)
+any().default("a"); // Set value to default value if it was undefined or null or empty string
 ```
 
 #### String Shape
@@ -195,23 +193,3 @@ Built-in configurations：
 
 - `en`（English, the default one）
 - `zh-CN`（Simplified Chinese）
-
-## Underlying Ajv Instance
-
-```ts
-const compiler = new Ajv({
-  transpile: false as never, // 不使用nodent编译异步函数
-  coerceTypes: true, // 开启基本类型之间的转换
-  removeAdditional: "failing", // 将对象和数组中不满足Schema的数据去除
-  useDefaults: true, // 当值为undefined或者空字符串是，会替换为默认值
-  strictNumbers: true, // 不接受 NaN 和 Infinity
-  nullable: true, // 兼容 OpenAPI 的 nullable 关键字
-  verbose: true, // 生成完整的错误对象
-  messages: false, // 不生成默认的错误信息
-});
-
-// Add keywords transform, regexp from ajv-keywords
-ajvKeywords(compiler, ["transform", "regexp"]);
-
-// Add keywords customSync, customAsync, errorMessage for shape internal useage
-```

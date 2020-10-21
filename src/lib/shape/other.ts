@@ -1,12 +1,12 @@
-import { AnyShape } from '../util/shape.types';
+import { AnyShape, Shape, ShapeOptions } from '../util/shape.types';
 import { Schema } from '../util/schema.types';
 import { BaseShapeImpl } from './base';
 
 /**
  * 创建一个「形状」用于描述自定义类型的值，使用自定义的Schema来验证数据
  */
-export function custom<T>(schema: Schema): AnyShape<T> {
-  return new BaseShapeImpl(schema);
+export function custom<T>(schema: Schema, options?: ShapeOptions): Shape<T> {
+  return { schema, options };
 }
 
 /**
@@ -15,9 +15,7 @@ export function custom<T>(schema: Schema): AnyShape<T> {
  * *值会先尝试转整数、再转布尔值*
  */
 export function boolean(): AnyShape<boolean> {
-  return new BaseShapeImpl({
-    allOf: [{ anyOf: [{ type: 'integer' }, {}] }, { type: 'boolean' }],
-  });
+  return new BaseShapeImpl({ type: 'boolean' });
 }
 
 /**
@@ -25,13 +23,8 @@ export function boolean(): AnyShape<boolean> {
  *
  * *可以接受 Epoch毫秒数 或者 ISO8601格式的字符串*
  */
-export function date(): AnyShape<string | number> {
-  return new BaseShapeImpl({
-    anyOf: [
-      { type: 'integer', minimum: 0 },
-      { type: 'string', format: 'date-time' },
-    ],
-  });
+export function date(): AnyShape<Date> {
+  return new BaseShapeImpl({ kind: 'date' });
 }
 
 /**

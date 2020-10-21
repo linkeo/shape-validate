@@ -1,4 +1,4 @@
-import { Schema, ThreePhraseSchema } from './schema.types';
+import { Schema } from './schema.types';
 
 const asyncKeywords = ['customAsync'];
 
@@ -91,35 +91,92 @@ export function checkAsyncSchema(schema: Schema): boolean {
   return false;
 }
 
-/**
- * 简化三阶段Schema，将空的执行阶段去除，并且在可能的情况下去掉allOf层级
- */
-export function simplifyThreePhaseSchema(threePhraseSchema: ThreePhraseSchema): Schema {
-  const {
-    allOf: [before, main, after],
-    stripNull,
-    default: defaultValue,
-  } = threePhraseSchema;
-
+export function transformIntoValidationSchema(schema: Schema): Schema {
+  const { before: [...before] = [], after: [...after] = [], ...rest } = schema;
   const allOf: Schema[] = [];
 
-  if (stripNull) {
-    allOf.push({ stripNull: true });
+  // add cast keyword
+  if (rest.type === 'number' || rest.type === 'integer' || rest.type === 'boolean') {
+    before.push({ cast: rest.type });
   }
-  if (before.allOf && before.allOf.length > 0) {
-    allOf.push(before);
+  if (rest.kind === 'date') {
+    before.push({ cast: rest.kind });
   }
-  allOf.push(main);
-  if (after.allOf && after.allOf.length > 0) {
-    allOf.push(after);
+
+  if (before.length > 0) {
+    allOf.push(...before.map(transformIntoValidationSchema));
   }
-  if (defaultValue !== undefined) {
-    return { allOf, default: defaultValue };
+
+  // transform nested schemas
+  if (isObject(rest.items)) {
+    rest.items = transformIntoValidationSchema(rest.items);
+  } else if (Array.isArray(rest.items)) {
+    rest.items = rest.items.map(transformIntoValidationSchema);
   }
+  if (isObject(rest.contains)) {
+    rest.contains = transformIntoValidationSchema(rest.contains);
+  }
+  if (isObject(rest.additionalProperties)) {
+    rest.additionalProperties = transformIntoValidationSchema(rest.additionalProperties);
+  }
+  if (isObject(rest.propertyNames)) {
+    rest.propertyNames = transformIntoValidationSchema(rest.propertyNames);
+  }
+  if (isObject(rest.if)) {
+    rest.if = transformIntoValidationSchema(rest.if);
+  }
+  if (isObject(rest.then)) {
+    rest.then = transformIntoValidationSchema(rest.then);
+  }
+  if (isObject(rest.else)) {
+    rest.else = transformIntoValidationSchema(rest.else);
+  }
+  if (Array.isArray(rest.oneOf)) {
+    rest.oneOf = rest.oneOf.map(transformIntoValidationSchema);
+  }
+  if (Array.isArray(rest.anyOf)) {
+    rest.anyOf = rest.anyOf.map(transformIntoValidationSchema);
+  }
+  if (Array.isArray(rest.allOf)) {
+    rest.allOf = rest.allOf.map(transformIntoValidationSchema);
+  }
+  if (isObject(rest.properties)) {
+    rest.properties = { ...rest.properties };
+    for (const key of Object.keys(rest.properties)) {
+      rest.properties[key] = transformIntoValidationSchema(rest.properties[key]);
+    }
+  }
+  if (isObject(rest.patternProperties)) {
+    rest.patternProperties = { ...rest.patternProperties };
+    for (const key of Object.keys(rest.patternProperties)) {
+      rest.patternProperties[key] = transformIntoValidationSchema(rest.patternProperties[key]);
+    }
+  }
+  if (isObject(rest.dependencies)) {
+    rest.dependencies = { ...rest.dependencies };
+    for (const key of Object.keys(rest.dependencies)) {
+      const value = rest.dependencies[key];
+      if (isObject(value)) {
+        rest.dependencies[key] = transformIntoValidationSchema(value);
+      }
+    }
+  }
+
+  allOf.push(rest);
+
+  // handle after schemas
+  if (after.length > 0) {
+    allOf.push(...after.map(transformIntoValidationSchema));
+  }
+
+  // return result schema
   if (allOf.length > 1) {
+    if (rest.default !== undefined) {
+      return { allOf, default: rest.default };
+    }
     return { allOf };
   }
-  return main;
+  return allOf[0];
 }
 
 export function overwriteChildrenErrorMessage(schema: Schema, message: string): void {

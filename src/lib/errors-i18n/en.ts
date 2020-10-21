@@ -21,6 +21,11 @@ export default {
       const type = String(params.type).replace(/,/g, ' or ');
       return `${name} should be ${type}`;
     },
+    kind: (path, params, schema) => {
+      const name = schema.title || path || 'value';
+      const type = String(schema.kind).replace(/,/g, ' or ');
+      return `${name} should be ${type}`;
+    },
     minimum: (path, params, schema) => {
       const name = schema.title || path || 'value';
       return `${name} should be at least ${params.limit}`;

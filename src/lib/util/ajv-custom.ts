@@ -1,26 +1,66 @@
 import { Ajv, ValidationError, ErrorObject } from 'ajv';
 
-export default function CustomKeywords(ajv: Ajv): void {
+export default function AjvCustom(ajv: Ajv): void {
+  ajv.addFormat('number', /^-?\d+(\.\d+)?(e-?\d+)?$/);
+  ajv.addFormat('integer', /^-?\d+$/);
+
   ajv.addKeyword('errorMessage', { valid: true });
-  ajv.addKeyword('stripNull', {
+  ajv.addKeyword('cast', {
     async: false,
     modifying: true,
-    metaSchema: { type: 'boolean' },
-    statements: true,
+    metaSchema: { enum: ['date', 'boolean', 'number', 'integer'] },
     inline: (it, _keyword, schema) => {
-      const result = `valid${it.level}`;
-      if (!schema || it.dataLevel === 0) {
-        return `var ${result} = true;`;
+      if (!(it.dataLevel > 0)) {
+        return 'true';
       }
       const value = `data${it.dataLevel}`;
-      const valueInParent = `data${it.dataLevel - 1 || ''}[${it.dataPathArr[it.dataLevel]}]`;
-      return `if (${value} === null) { ${value} = ${valueInParent} = undefined; } var ${result} = true;`;
+      const refer = `data${it.dataLevel - 1 || ''}[${it.dataPathArr[it.dataLevel]}]`;
+      let cond = 'true';
+      let next = value;
+      switch (schema) {
+        case 'date':
+          cond = `formats['date-time'].test(${value})`;
+          next = `new Date(${value})`;
+          break;
+        case 'number':
+          cond = `formats.number.test(${value})`;
+          next = `Number(${value})`;
+          break;
+        case 'integer':
+          cond = `formats.integer.test(${value})`;
+          next = `Number(${value})`;
+          break;
+        case 'boolean':
+          cond = `(${value} === true || ${value} === 'true' || ${value} === 1 || ${value} === '1' || ${value} === false || ${value} === 'false' || ${value} === 0 || ${value} === '0')`;
+          next = `(${value} === true || ${value} === 'true' || ${value} === 1 || ${value} === '1')`;
+          break;
+        default:
+          break;
+      }
+      return `(${value} != null && ${cond} && (${value} = ${refer} = ${next}), true)`;
+    },
+  });
+  ajv.addKeyword('kind', {
+    async: false,
+    modifying: false,
+    metaSchema: { enum: ['date'] },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    inline: (it, _keyword, schema, parentSchema: any) => {
+      const value = `data${it.dataLevel}`;
+      const prefix = parentSchema.nullable ? `${value} === null || ` : '';
+      switch (schema) {
+        case 'date':
+          return `${prefix}${value} instanceof Date && Number.isSafeInteger(${value}.valueOf())`;
+        default:
+          return 'true';
+      }
     },
   });
   ajv.addKeyword('customSync', {
     async: false,
     modifying: true,
     compile: (schema, parentSchema, it) => {
+      const schemaPath = it.schemaPath;
       const func: {
         <T extends string | number>(
           data: unknown,
@@ -41,7 +81,7 @@ export default function CustomKeywords(ajv: Ajv): void {
             {
               keyword: 'customSync',
               dataPath: dataPath ?? '',
-              schemaPath: it.schemaPath,
+              schemaPath,
               params: { message: err.message, stack: err.stack },
               schema,
               parentSchema,
@@ -59,6 +99,7 @@ export default function CustomKeywords(ajv: Ajv): void {
     async: true,
     modifying: true,
     compile: (schema, parentSchema, it) => {
+      const schemaPath = it.schemaPath;
       const func: {
         <T extends string | number>(
           data: unknown,
@@ -78,7 +119,7 @@ export default function CustomKeywords(ajv: Ajv): void {
             {
               keyword: 'customSync',
               dataPath: dataPath ?? '',
-              schemaPath: it.schemaPath,
+              schemaPath,
               params: { message: err.message, stack: err.stack },
               schema,
               parentSchema,

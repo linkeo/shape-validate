@@ -1,6 +1,5 @@
 import { ObjectShape, Shape, ShapeValue, ShapeOptions } from '../util/shape.types';
 import { ObjectSchema, Schema } from '../util/schema.types';
-import { simplifyThreePhaseSchema } from '../util/functions';
 import { BaseShapeImpl } from './base';
 
 type ShapeObject = { [key: string]: Shape };
@@ -22,9 +21,7 @@ type FixOptional<T> = Flatten<{ [K in RequiredKeys<T>]: T[K] } & { [K in Optiona
 type ObjectShapeValue<T> = FixOptional<ExtractShapeProperties<T>>;
 
 function generateSchemaProperties<T extends ShapeObject>(properties: T): { [key: string]: Schema } {
-  return Object.fromEntries(
-    Object.entries(properties).map(([key, shape]) => [key, simplifyThreePhaseSchema(shape.schema)])
-  );
+  return Object.fromEntries(Object.entries(properties).map(([key, shape]) => [key, shape.schema]));
 }
 function generateSchemaRequired<T extends ShapeObject>(properties: T): string[] {
   return Object.keys(properties).filter((key) => !properties[key].options?.optional);
@@ -36,7 +33,9 @@ class ObjectShapeImpl<T> extends BaseShapeImpl<T, 'object'> implements ObjectSha
   }
 
   keepUnknown(keep = true): ObjectShape<T> {
-    return this.extend({ additionalProperties: keep });
+    return this.produce_((draft) => {
+      draft.additionalProperties = keep;
+    }, undefined);
   }
 }
 
@@ -62,13 +61,13 @@ export function object<T extends ShapeObject>(properties: T): ObjectShape<Object
 export function merge<T, U>(base: ObjectShape<T>, extra: ObjectShape<U>): ObjectShape<Omit<T, keyof U> & U> {
   return new ObjectShapeImpl({
     type: 'object',
-    properties: { ...base.schema.allOf[1].properties, ...extra.schema.allOf[1].properties },
+    properties: { ...base.schema.properties, ...extra.schema.properties },
     required: [
-      ...(base.schema.allOf[1].required?.filter(
-        (key) => !extra.schema.allOf[1].properties || !Reflect.has(extra.schema.allOf[1].properties, key)
+      ...(base.schema.required?.filter(
+        (key) => !extra.schema.properties || !Reflect.has(extra.schema.properties, key)
       ) ?? []),
-      ...(extra.schema.allOf[1].required ?? []),
+      ...(extra.schema.required ?? []),
     ],
-    additionalProperties: base.schema.allOf[1].additionalProperties || extra.schema.allOf[1].additionalProperties,
+    additionalProperties: base.schema.additionalProperties || extra.schema.additionalProperties,
   });
 }

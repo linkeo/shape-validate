@@ -1,6 +1,5 @@
 import { inspect } from 'util';
 import { object, integer, string, setLocale, array } from '../lib';
-import { simplifyThreePhaseSchema } from '../lib/util/functions';
 
 setLocale('zh-CN');
 
@@ -10,7 +9,7 @@ const shape = object({
   tags: array(string().minLength(1).trim().message('标签必须是字符串')).unique().title('标签'),
 });
 
-console.log('\nschema:', inspect(simplifyThreePhaseSchema(shape.schema), { depth: Infinity, colors: true }));
+console.log('\nschema:', inspect(shape.schema, { depth: Infinity, colors: true }));
 
 shape.validateAsync({ name: 'linkeo', tags: ['a', 1, 3, '3', undefined] }).then(
   (res) => {

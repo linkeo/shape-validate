@@ -10,11 +10,11 @@ class NumberShapeImpl<T> extends BaseShapeImpl<T, 'number'> implements NumberSha
   min(value: number, exclusive?: boolean): NumberShape<T> {
     return this.produce_((draft) => {
       if (exclusive) {
-        draft.allOf[1].exclusiveMinimum = value;
-        delete draft.allOf[1].minimum;
+        draft.exclusiveMinimum = value;
+        delete draft.minimum;
       } else {
-        draft.allOf[1].minimum = value;
-        delete draft.allOf[1].exclusiveMinimum;
+        draft.minimum = value;
+        delete draft.exclusiveMinimum;
       }
     }, undefined);
   }
@@ -22,11 +22,11 @@ class NumberShapeImpl<T> extends BaseShapeImpl<T, 'number'> implements NumberSha
   max(value: number, exclusive?: boolean): NumberShape<T> {
     return this.produce_((draft) => {
       if (exclusive) {
-        draft.allOf[1].exclusiveMaximum = value;
-        delete draft.allOf[1].maximum;
+        draft.exclusiveMaximum = value;
+        delete draft.maximum;
       } else {
-        draft.allOf[1].maximum = value;
-        delete draft.allOf[1].exclusiveMaximum;
+        draft.maximum = value;
+        delete draft.exclusiveMaximum;
       }
     }, undefined);
   }
@@ -34,21 +34,23 @@ class NumberShapeImpl<T> extends BaseShapeImpl<T, 'number'> implements NumberSha
   range(min: number, max: number, exclusive?: boolean): NumberShape<T> {
     return this.produce_((draft) => {
       if (exclusive) {
-        draft.allOf[1].exclusiveMaximum = max;
-        draft.allOf[1].exclusiveMinimum = min;
-        delete draft.allOf[1].minimum;
-        delete draft.allOf[1].maximum;
+        draft.exclusiveMaximum = max;
+        draft.exclusiveMinimum = min;
+        delete draft.minimum;
+        delete draft.maximum;
       } else {
-        draft.allOf[1].minimum = min;
-        draft.allOf[1].maximum = max;
-        delete draft.allOf[1].exclusiveMinimum;
-        delete draft.allOf[1].exclusiveMaximum;
+        draft.minimum = min;
+        draft.maximum = max;
+        delete draft.exclusiveMinimum;
+        delete draft.exclusiveMaximum;
       }
     }, undefined);
   }
 
   multipleOf(base: number): NumberShape<T> {
-    return this.extend({ multipleOf: base });
+    return this.produce_((draft) => {
+      draft.multipleOf = base;
+    }, undefined);
   }
 }
 

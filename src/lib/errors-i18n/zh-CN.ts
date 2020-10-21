@@ -10,6 +10,10 @@ const TYPES: Record<string, string> = {
   array: '数组',
 };
 
+const KINDS: Record<string, string> = {
+  date: '时间戳',
+};
+
 const FORMATS: Record<string, string> = {
   email: '电子邮箱',
   uuid: 'UUID',
@@ -46,6 +50,14 @@ export default {
       const type = String(params.type)
         .split(',')
         .map((t) => TYPES[t] ?? t)
+        .join('或者');
+      return `${name}必须是${type}`;
+    },
+    kind: (path, params, schema) => {
+      const name = schema.title || path || 'value';
+      const type = String(params.type)
+        .split(',')
+        .map((t) => KINDS[t] ?? t)
         .join('或者');
       return `${name}必须是${type}`;
     },
