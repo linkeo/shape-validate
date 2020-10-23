@@ -8,6 +8,7 @@
   - [简单介绍](#简单介绍)
     - [「形状」的定义](#形状的定义)
     - [「形状」的使用](#形状的使用)
+      - [验证数据](#验证数据)
       - [基本「形状」](#基本形状)
       - [字符串「形状」](#字符串形状)
       - [数字「形状」](#数字形状)
@@ -18,18 +19,17 @@
       - [自定义](#自定义)
       - [自定义错误信息](#自定义错误信息)
       - [错误信息国际化](#错误信息国际化)
+      - [类型转换](#类型转换)
 
 ## 主要特性
 
 - 底层使用 Ajv 实现验证逻辑，执行快
 - 提供类似 Joi 的 API，定义「形状」时很方便
 - 提供类似 SuperStruct 的类型推断，对 TypeScript 更加友好
-- ~~三位一体的缝合怪~~
 - 默认深拷贝数据再进行验证，为了提升性能，可以随时在验证时关闭
 - 可使用自定义的验证逻辑（同步函数/异步函数）
 - 可以方便地控制验证逻辑的执行顺序
 - 可以直接用 Schema 创建自定义的形状
-- 基本类型之间会互相转换（详细请查阅 https://ajv.js.org/coercion.html ）
 
 ## 快速开始
 
@@ -55,6 +55,24 @@ await shape.validateAsync({ name: "Tom", age: "18" });
 「形状」是用来约束数据的条件，与 JSON Schema 和 OpenAPI Schema 类似。
 
 ### 「形状」的使用
+
+#### 验证数据
+
+```ts
+import { validateSync, validateAsync } from "shape-validate";
+
+// 用包里提供的验证函数
+const validatedValue = validateSync(shape, inputValue);
+const validatedValue = validateSync(shape, inputValue, false); // turn off deep clone
+
+// 用Shape实例的验证方法
+const validatedValue = shape.validateSync(inputValue);
+const validatedValue = shape.validateSync(inputValue, false); // turn off deep clone
+```
+
+验证函数/方法会返回验证后的数据（可能会有修改），或者抛出验证错误。
+
+> 基本上，当形状是从别的地方传过来的时候，用验证函数；当形状是当场创建或者直接引用的时候，用验证方法。
 
 #### 基本「形状」
 
@@ -162,6 +180,8 @@ shape.beforeAsync(async (value) => await findReference(value));
 shape.afterAsync(async (value) => await findResult(value));
 ```
 
+> `custom()` 返回一个形状对象而不是形状实例, 意味着不能用方法（如 `shape.validateSync(value)`）去验证，但是仍然可以用函数（如 `validateSync(shape, value)`）验证。
+
 #### 自定义错误信息
 
 ```ts
@@ -202,3 +222,16 @@ setLocale("zh-CN");
 
 - `en`（英文，默认就是英文）
 - `zh-CN`（中文）
+
+#### 类型转换
+
+这些形状的数据可以从其他值转换而来:
+
+| shape     | from                              |
+| --------- | --------------------------------- |
+| boolean() | `'true', 'false', 1, 0, '1', '0'` |
+| number()  | `12.34, 1234, 12.3e4`             |
+| integer() | `1234`                            |
+| date()    | ISO8601 Date-Time String          |
+
+如果需要其他转换可以通过 `beforeSync()` 或者 `beforeAsync()` 来定义。

@@ -8,6 +8,7 @@ A library to validate data, based on ajv, inspired by joi and superstruct.
   - [Introduction](#introduction)
     - ["Shape"](#shape)
     - [Usage](#usage)
+      - [Validation](#validation)
       - [Basic Shapes](#basic-shapes)
       - [String Shape](#string-shape)
       - [Number Shapes](#number-shapes)
@@ -18,18 +19,17 @@ A library to validate data, based on ajv, inspired by joi and superstruct.
       - [Custom Shape and Logic](#custom-shape-and-logic)
       - [Customize Error Messages](#customize-error-messages)
       - [i18n](#i18n)
+      - [Type Coercing](#type-coercing)
 
 ## Features
 
 - Use ajv to compile validate function, so it's fast
 - Provides joi-like api, easy to use
-- Provides TypeScript types, useful for TypeScript to infer type of validated data.
-- ~~Just the combination of advantages in the these library.~~
-- Deep clone data before validation, which can be turned off.闭
+- Provides TypeScript types, useful for inferring type of validated data.
+- Deep clone data before validation, which can be turned off.
 - Use user-defined functions to customize validation
 - Use before/after methods to control validation order
-- Define new shape directly from json schema
-- Ajv coercion is turned on (See https://ajv.js.org/coercion.html)
+- Define new shape directly from JSON Schema
 
 ## Quick Start
 
@@ -55,6 +55,28 @@ await shape.validateAsync({ name: "Tom", age: "18" });
 "Shape" is a wrapper for JSON Schema, with some options for combining into other shapes.
 
 ### Usage
+
+#### Validation
+
+```ts
+import { validateSync, validateAsync } from "shape-validate";
+
+// use validate functions in this package
+const validatedValue = validateSync(shape, inputValue);
+const validatedValue = validateSync(shape, inputValue, false); // turn off deep clone
+const validatedValue = await validateAsync(shape, inputValue);
+const validatedValue = await validateAsync(shape, inputValue, false); // turn off deep clone
+
+// use validate methods of shapes
+const validatedValue = shape.validateSync(inputValue);
+const validatedValue = shape.validateSync(inputValue, false); // turn off deep clone
+const validatedValue = await shape.validateAsync(inputValue);
+const validatedValue = await shape.validateAsync(inputValue, false); // turn off deep clone
+```
+
+Validate functions/methods will return the value after validate (value could be modified), or throw a validation error.
+
+> Basically, you can use validation functions if shape is an input value, use methods if shape is surely an instance of shape class.
 
 #### Basic Shapes
 
@@ -153,6 +175,8 @@ shape.beforeAsync(async (value) => await findReference(value));
 shape.afterAsync(async (value) => await findResult(value));
 ```
 
+> `custom()` return a shape object instead of shape instance, means you cannot use `shape.validateSync(value)` (but you can use this in `validateSync(shape, value)`).
+
 #### Customize Error Messages
 
 ```ts
@@ -193,3 +217,16 @@ Built-in configurations：
 
 - `en`（English, the default one）
 - `zh-CN`（Simplified Chinese）
+
+#### Type Coercing
+
+These shape can be coerced from other values:
+
+| shape     | from                              |
+| --------- | --------------------------------- |
+| boolean() | `'true', 'false', 1, 0, '1', '0'` |
+| number()  | `12.34, 1234, 12.3e4`             |
+| integer() | `1234`                            |
+| date()    | ISO8601 Date-Time String          |
+
+Other conversion can be defined by `beforeSync()` or `beforeAsync()`
